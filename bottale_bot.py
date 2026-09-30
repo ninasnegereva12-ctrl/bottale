@@ -992,6 +992,24 @@ async def cmd_top(message: Message):
     await message.answer("\n".join(lines))
 
 
+@router.message(Command("top"))
+async def cmd_top(message: Message):
+    users = all_users(message.chat.id)
+    ranked = sorted(users.values(), key=lambda u: u.get("wins", 0), reverse=True)
+    ranked = [u for u in ranked if u.get("wins", 0) > 0][:10]
+    if not ranked:
+        await message.answer("Пока никто не побеждал в /fight.")
+        return
+    medals = ["🥇", "🥈", "🥉"]
+    lines = ["🏆 Топ бойцов чата:"]
+    for i, u in enumerate(ranked):
+        prefix = medals[i] if i < 3 else f"{i + 1}."
+        lines.append(
+            f"{prefix} {u['name']} — {u.get('wins', 0)}W / {u.get('losses', 0)}L"
+        )
+    await message.answer("\n".join(lines))
+
+
 @router.message(Command("help"))
 @router.callback_query(F.data == "btn_help")
 async def cmd_help(event: Message | CallbackQuery):
@@ -1020,8 +1038,6 @@ async def cmd_help(event: Message | CallbackQuery):
         "✨ *HP восстанавливается автоматически: +10 HP за каждые 5 сообщений в чате.*"
     )
     await message.answer(help_text)
-
-
 @router.message(F.text & ~F.text.startswith("/"))
 async def on_any_text(message: Message):
     p = ensure_profile(message.chat.id, message.from_user.id, display_name(message))
@@ -1042,4 +1058,3 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-    
