@@ -9,26 +9,26 @@ import time
 from aiogram import Bot, Dispatcher, F, Router
 from aiogram.filters import Command, CommandObject
 from aiogram.types import (
+    BotCommand,
     CallbackQuery,
     InlineKeyboardButton,
     InlineKeyboardMarkup,
     Message,
-    BotCommand,
 )
 
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "ВСТАВЬ_СЮДА_СВОЙ_ТОКЕН")
 
 router = Router()
 
-# --- ДУШИ И СМОСОБНОСТИ ---
+# --- ДУШИ И СПОСОБНОСТИ ---
 
 SOULS = {
     "det": {"name": "Решимость", "emoji": "❤️"},
     "bra": {"name": "Храбрость", "emoji": "🧡"},
     "jus": {"name": "Справедливость", "emoji": "💛"},
-    "pat": {"name": "Терпение", "emoji": "🩵"},
+    "pat": {"name": "Терпение", "emoji": "💙"},
     "kin": {"name": "Доброта", "emoji": "💚"},
-    "int": {"name": "Искренность", "emoji": "💙"},
+    "int": {"name": "Искренность", "emoji": "🔷"},
     "per": {"name": "Упорство", "emoji": "💜"},
 }
 
@@ -76,17 +76,21 @@ PAIRS = {
 CHILD_STAGES = ["Яйцо", "Малыш", "Подросток", "Юный монстр", "Взрослый"]
 PET_STAGE_EMOJIS = ["🥚", "🐣", "🦖", "👹", "😈"]
 
+
 def pair_key(a: str, b: str) -> str:
     return "-".join(sorted([a, b]))
 
+
 def compat(a: str, b: str):
     return PAIRS.get(pair_key(a, b), (50, "Загадочный резонанс душ..."))
+
 
 def soul_label(key: str) -> str:
     if not key or key not in SOULS:
         return "Неизвестно"
     s = SOULS[key]
     return f"{s['emoji']} {s['name']}"
+
 
 def soul_ability_text(key: str) -> str:
     return SOUL_ABILITIES.get(key, "")
@@ -162,8 +166,10 @@ QUIZ_QUESTIONS = [
     },
 ]
 
+
 def new_scores() -> dict:
     return {k: 0 for k in SOUL_KEYS}
+
 
 def determine_soul(scores: dict) -> str:
     best = max(scores.values())
@@ -174,17 +180,44 @@ def determine_soul(scores: dict) -> str:
 # --- ПРЕДМЕТЫ ---
 
 ITEMS = {
-    "potion": {"label": "🧪 Зелье лечения", "desc": "Восстанавливает 30 HP сразу при использовании.", "kind": "heal", "value": 30},
-    "sword": {"label": "🗡️ Заряженный клинок", "desc": "В следующем бою: +8 к урону в каждом раунде.", "kind": "buff_dmg", "value": 8},
-    "shield": {"label": "🛡️ Оберег", "desc": "В следующем бою: весь входящий урон снижен на 40%.", "kind": "buff_def", "value": 0.4},
-    "feather": {"label": "🪶 Лёгкое перо", "desc": "В следующем бою: +20% к шансу уклониться от удара.", "kind": "buff_dodge", "value": 0.20},
-    "treat": {"label": "🍖 Вкусняшка", "desc": "Мгновенно повышает сытость питомца на 40.", "kind": "pet_food", "value": 40},
+    "potion": {
+        "label": "🧪 Зелье лечения",
+        "desc": "Восстанавливает 30 HP сразу при использовании.",
+        "kind": "heal",
+        "value": 30,
+    },
+    "sword": {
+        "label": "🗡️ Заряженный клинок",
+        "desc": "В следующем бою: +8 к урону в каждом раунде.",
+        "kind": "buff_dmg",
+        "value": 8,
+    },
+    "shield": {
+        "label": "🛡️ Оберег",
+        "desc": "В следующем бою: весь входящий урон снижен на 40%.",
+        "kind": "buff_def",
+        "value": 0.4,
+    },
+    "feather": {
+        "label": "🪶 Лёгкое перо",
+        "desc": "В следующем бою: +20% к шансу уклониться от удара.",
+        "kind": "buff_dodge",
+        "value": 0.20,
+    },
+    "treat": {
+        "label": "🍖 Вкусняшка",
+        "desc": "Мгновенно повышает сытость питомца на 40.",
+        "kind": "pet_food",
+        "value": 40,
+    },
 }
 
 DROP_POOL = list(ITEMS.keys())
 
+
 def item_label(key: str) -> str:
     return ITEMS[key]["label"] if key in ITEMS else key
+
 
 def inventory_text(inv: dict) -> str:
     owned = [(k, c) for k, c in inv.items() if c > 0]
@@ -204,6 +237,7 @@ def inventory_text(inv: dict) -> str:
 DATA_FILE = os.path.join(os.path.dirname(__file__), "data.json")
 _lock = threading.Lock()
 
+
 def _load() -> dict:
     if not os.path.exists(DATA_FILE):
         return {}
@@ -213,9 +247,11 @@ def _load() -> dict:
         except json.JSONDecodeError:
             return {}
 
+
 def _save(data: dict) -> None:
     with open(DATA_FILE, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
+
 
 def default_profile(name: str) -> dict:
     return {
@@ -241,10 +277,12 @@ def default_profile(name: str) -> dict:
         "last_play_ts": 0.0,
     }
 
+
 def get_user(chat_id: int, user_id: int) -> dict | None:
     with _lock:
         data = _load()
         return data.get(str(chat_id), {}).get(str(user_id))
+
 
 def get_or_create_user(chat_id: int, user_id: int, name: str) -> dict:
     with _lock:
@@ -264,12 +302,14 @@ def get_or_create_user(chat_id: int, user_id: int, name: str) -> dict:
                 _save(data)
         return chat[key]
 
+
 def save_user(chat_id: int, user_id: int, profile: dict) -> None:
     with _lock:
         data = _load()
         chat = data.setdefault(str(chat_id), {})
         chat[str(user_id)] = profile
         _save(data)
+
 
 def all_users(chat_id: int) -> dict:
     with _lock:
@@ -287,23 +327,37 @@ PLAY_DROP_CHANCE = 0.30
 
 quiz_sessions: dict[tuple[int, int], dict] = {}
 
+
 def get_start_inline_keyboard():
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [
-                InlineKeyboardButton(text="💔 Определить душу", callback_data="btn_soul"),
-                InlineKeyboardButton(text="📊 Мой профиль / HP", callback_data="btn_profile"),
+                InlineKeyboardButton(
+                    text="💔 Определить душу", callback_data="btn_soul"
+                ),
+                InlineKeyboardButton(
+                    text="📊 Мой профиль / HP", callback_data="btn_profile"
+                ),
             ],
             [
-                InlineKeyboardButton(text="⚔️ Дуэль", callback_data="btn_fight_info"),
-                InlineKeyboardButton(text="💞 Совместимость", callback_data="btn_compat_info"),
+                InlineKeyboardButton(
+                    text="⚔️ Дуэль", callback_data="btn_fight_info"
+                ),
+                InlineKeyboardButton(
+                    text="💞 Совместимость", callback_data="btn_compat_info"
+                ),
             ],
             [
-                InlineKeyboardButton(text="🐾 Питомец", callback_data="btn_pet"),
-                InlineKeyboardButton(text="📜 Все команды", callback_data="btn_help"),
-            ]
+                InlineKeyboardButton(
+                    text="🐾 Питомец", callback_data="btn_pet"
+                ),
+                InlineKeyboardButton(
+                    text="📜 Все команды", callback_data="btn_help"
+                ),
+            ],
         ]
     )
+
 
 def quiz_keyboard(qindex: int) -> InlineKeyboardMarkup:
     options = QUIZ_QUESTIONS[qindex]["options"]
@@ -313,12 +367,15 @@ def quiz_keyboard(qindex: int) -> InlineKeyboardMarkup:
     ]
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
+
 def ensure_profile(chat_id: int, user_id: int, name: str) -> dict:
     return get_or_create_user(chat_id, user_id, name)
+
 
 def display_name(message: Message) -> str:
     u = message.from_user
     return u.first_name or u.username or "Персонаж"
+
 
 def target_from_reply(message: Message):
     if not message.reply_to_message:
@@ -329,7 +386,10 @@ def target_from_reply(message: Message):
         return None
     return target.id, profile
 
-def compute_damage(attacker: dict, defender: dict) -> tuple[int, bool, bool, int]:
+
+def compute_damage(
+    attacker: dict, defender: dict
+) -> tuple[int, bool, bool, int]:
     dmg = random.randint(10, 25)
 
     if attacker.get("soul") == "bra":
@@ -342,7 +402,10 @@ def compute_damage(attacker: dict, defender: dict) -> tuple[int, bool, bool, int
     if is_crit:
         dmg = int(dmg * 1.5)
 
-    if attacker.get("soul") == "per" and attacker["hp"] <= attacker["max_hp"] * 0.3:
+    if (
+        attacker.get("soul") == "per"
+        and attacker["hp"] <= attacker["max_hp"] * 0.3
+    ):
         dmg = int(dmg * 1.3)
 
     dodge_chance = 0.0
@@ -352,7 +415,11 @@ def compute_damage(attacker: dict, defender: dict) -> tuple[int, bool, bool, int
         dodge_chance += ITEMS["feather"]["value"]
 
     dodged = False
-    if attacker.get("soul") != "int" and dodge_chance > 0 and random.random() < dodge_chance:
+    if (
+        attacker.get("soul") != "int"
+        and dodge_chance > 0
+        and random.random() < dodge_chance
+    ):
         dmg = dmg // 2
         dodged = True
 
@@ -367,8 +434,8 @@ def compute_damage(attacker: dict, defender: dict) -> tuple[int, bool, bool, int
 
     return dmg, is_crit, dodged, healed
 
-
 # --- ОБРАБОТЧИКИ КОМАНД И ИНТЕРФЕЙСА ---
+
 
 async def setup_bot_commands(bot: Bot):
     commands = [
@@ -377,11 +444,14 @@ async def setup_bot_commands(bot: Bot):
         BotCommand(command="profile", description="Профиль и HP"),
         BotCommand(command="fight", description="Вызвать на дуэль (в ответ)"),
         BotCommand(command="compat", description="Совместимость (в ответ)"),
-        BotCommand(command="propose", description="Сделать предложение (в ответ)"),
+        BotCommand(
+            command="propose", description="Сделать предложение (в ответ)"
+        ),
         BotCommand(command="pet", description="Информация о питомце"),
         BotCommand(command="help", description="Полная инструкция"),
     ]
     await bot.set_my_commands(commands)
+
 
 async def start_quiz_session(chat_id: int, user_id: int, send_func):
     key = (chat_id, user_id)
@@ -400,20 +470,32 @@ async def cmd_start(message: Message):
         "Здесь решительность, искренность и выдержка определят твою судьбу.\n\n"
         "Выбери нужное действие на кнопках ниже или используй синюю кнопку **«Меню»** слева от поля ввода! ✨"
     )
-    await message.answer(undertale_text, reply_markup=get_start_inline_keyboard())
+    await message.answer(
+        undertale_text, reply_markup=get_start_inline_keyboard()
+    )
 
 
 @router.message(Command("soul"))
 async def cmd_soul(message: Message):
     ensure_profile(message.chat.id, message.from_user.id, display_name(message))
-    await start_quiz_session(message.chat.id, message.from_user.id, message.answer)
+    await start_quiz_session(
+        message.chat.id, message.from_user.id, message.answer
+    )
 
 
 @router.callback_query(F.data == "btn_soul")
 async def cb_start_soul(callback: CallbackQuery):
     await callback.answer()
-    ensure_profile(callback.message.chat.id, callback.from_user.id, callback.from_user.first_name or "Персонаж")
-    await start_quiz_session(callback.message.chat.id, callback.from_user.id, callback.message.answer)
+    ensure_profile(
+        callback.message.chat.id,
+        callback.from_user.id,
+        callback.from_user.first_name or "Персонаж",
+    )
+    await start_quiz_session(
+        callback.message.chat.id,
+        callback.from_user.id,
+        callback.message.answer,
+    )
 
 
 @router.callback_query(F.data.startswith("quiz:"))
@@ -424,7 +506,9 @@ async def on_quiz_answer(callback: CallbackQuery):
     key = (callback.message.chat.id, callback.from_user.id)
     session = quiz_sessions.get(key)
     if session is None or session["q"] != qindex:
-        await callback.answer("Тест устарел, начни заново нажатием /soul", show_alert=True)
+        await callback.answer(
+            "Тест устарел, начни заново нажатием /soul", show_alert=True
+        )
         return
 
     _, weights = QUIZ_QUESTIONS[qindex]["options"][optindex]
@@ -444,7 +528,11 @@ async def on_quiz_answer(callback: CallbackQuery):
     result = determine_soul(session["scores"])
     del quiz_sessions[key]
 
-    profile = ensure_profile(callback.message.chat.id, callback.from_user.id, callback.from_user.first_name or "Персонаж")
+    profile = ensure_profile(
+        callback.message.chat.id,
+        callback.from_user.id,
+        callback.from_user.first_name or "Персонаж",
+    )
     profile["soul"] = result
     save_user(callback.message.chat.id, callback.from_user.id, profile)
 
@@ -472,7 +560,7 @@ async def cmd_profile(event: Message | CallbackQuery):
     p = ensure_profile(message.chat.id, user.id, user.first_name or "Персонаж")
     soul_txt = soul_label(p["soul"]) if p.get("soul") else "не выбрана (/soul)"
     lines = [
-        f"📊 **ТВОЙ ПРОФИЛЬ:**",
+        "📊 **ТВОЙ ПРОФИЛЬ:**",
         f"👤 Имя: {p['name']}",
         f"🔷 Душа: {soul_txt}",
         f"❤️ HP: {p['hp']} / {p['max_hp']}",
@@ -485,26 +573,32 @@ async def cmd_profile(event: Message | CallbackQuery):
     if p.get("married_to"):
         spouse = get_user(message.chat.id, p["married_to"])
         if spouse:
-            lines.append(f"💍 В браке с: {spouse['name']} ({p.get('marry_score', 0)}%)")
+            lines.append(
+                f"💍 В браке с: {spouse['name']} ({p.get('marry_score', 0)}%)"
+            )
         if p.get("pet_name"):
-            lines.append(f"🐾 Питомец: {p['pet_name']} (сытость {p.get('hunger', 100)}/100, /pet)")
+            lines.append(
+                f"🐾 Питомец: {p['pet_name']} (сытость {p.get('hunger', 100)}/100, /pet)"
+            )
 
     txt = "\n".join(lines)
-    if is_cb:
-        await message.answer(txt)
-    else:
-        await message.answer(txt)
+    await message.answer(txt)
 
 
 @router.callback_query(F.data == "btn_fight_info")
 async def cb_fight_info(callback: CallbackQuery):
     await callback.answer()
-    await callback.message.answer("⚔️ Чтобы вызвать человека на дуэль, ответь командой `/fight` на его сообщение в чате!")
+    await callback.message.answer(
+        "⚔️ Чтобы вызвать человека на дуэль, ответь командой `/fight` на его сообщение в чате!"
+    )
+
 
 @router.callback_query(F.data == "btn_compat_info")
 async def cb_compat_info(callback: CallbackQuery):
     await callback.answer()
-    await callback.message.answer("💞 Чтобы проверить совместимость душ, ответь командой `/compat` на сообщение человека в чате!")
+    await callback.message.answer(
+        "💞 Чтобы проверить совместимость душ, ответь командой `/compat` на сообщение человека в чате!"
+    )
 
 
 @router.message(Command("compat"))
@@ -512,7 +606,9 @@ async def cmd_compat(message: Message):
     me = ensure_profile(message.chat.id, message.from_user.id, display_name(message))
     target = target_from_reply(message)
     if not target:
-        await message.answer("Ответь этой командой на сообщение того, с кем сверяешь совместимость.")
+        await message.answer(
+            "Ответь этой командой на сообщение того, с кем сверяешь совместимость."
+        )
         return
     _, other = target
     if not me.get("soul") or not other.get("soul"):
@@ -528,4 +624,422 @@ async def cmd_compat(message: Message):
 async def cmd_propose(message: Message):
     ensure_profile(message.chat.id, message.from_user.id, display_name(message))
     target = target_from_reply(message)
-    if
+    if not target:
+        await message.answer(
+            "Ответь этой командой на сообщение того, кому делаешь предложение."
+        )
+        return
+    target_id, target_profile = target
+    if target_profile.get("married_to"):
+        await message.answer(f"{target_profile['name']} уже в браке.")
+        return
+    target_profile["pending_proposal_from"] = message.from_user.id
+    save_user(message.chat.id, target_id, target_profile)
+    await message.answer(
+        f"💌 {display_name(message)} сделал(а) предложение {target_profile['name']}!\n"
+        f"{target_profile['name']}, набери /accept, чтобы согласиться."
+    )
+
+
+@router.message(Command("accept"))
+async def cmd_accept(message: Message):
+    me = ensure_profile(message.chat.id, message.from_user.id, display_name(message))
+    proposer_id = me.get("pending_proposal_from")
+    if not proposer_id:
+        await message.answer("Тебе никто не делал предложение.")
+        return
+    proposer = get_user(message.chat.id, proposer_id)
+    if not proposer or not me.get("soul") or not proposer.get("soul"):
+        await message.answer(
+            "У обоих должна быть выбрана душа (/soul), чтобы пожениться."
+        )
+        return
+    score, _ = compat(me["soul"], proposer["soul"])
+    for who in (me, proposer):
+        who["marry_score"] = score
+        who["pet_name"] = None
+        who["hunger"] = 100
+        who["bond"] = 0
+        who["last_feed_ts"] = 0.0
+        who["last_play_ts"] = 0.0
+    me["married_to"] = proposer_id
+    me["marry_msg_at"] = me["msg_count"]
+    me["pending_proposal_from"] = None
+    proposer["married_to"] = message.from_user.id
+    proposer["marry_msg_at"] = proposer["msg_count"]
+    save_user(message.chat.id, message.from_user.id, me)
+    save_user(message.chat.id, proposer_id, proposer)
+    await message.answer(
+        f"💍 {proposer['name']} и {me['name']} теперь официально женаты! "
+        f"Совместимость душ: {score}%."
+    )
+
+
+@router.message(Command("divorce"))
+async def cmd_divorce(message: Message):
+    me = ensure_profile(message.chat.id, message.from_user.id, display_name(message))
+    if not me.get("married_to"):
+        await message.answer("Ты не в браке.")
+        return
+    spouse_id = me["married_to"]
+    spouse = get_user(message.chat.id, spouse_id)
+    me.update(
+        married_to=None,
+        marry_score=0,
+        marry_msg_at=0,
+        pet_name=None,
+        hunger=100,
+        bond=0,
+        last_feed_ts=0.0,
+        last_play_ts=0.0,
+    )
+    save_user(message.chat.id, message.from_user.id, me)
+    if spouse:
+        spouse.update(
+            married_to=None,
+            marry_score=0,
+            marry_msg_at=0,
+            pet_name=None,
+            hunger=100,
+            bond=0,
+            last_feed_ts=0.0,
+            last_play_ts=0.0,
+        )
+        save_user(message.chat.id, spouse_id, spouse)
+    await message.answer(
+        f"💔 {me['name']} и {spouse['name'] if spouse else 'партнёр'} развелись."
+    )
+
+
+@router.message(Command("namepet"))
+async def cmd_namepet(message: Message, command: CommandObject):
+    p = ensure_profile(message.chat.id, message.from_user.id, display_name(message))
+    if not p.get("married_to"):
+        await message.answer(
+            "Питомец доступен только женатым парам (/propose и /accept)."
+        )
+        return
+    if not command.args:
+        await message.answer("Использование: /namepet Имя")
+        return
+    p["pet_name"] = command.args.strip()
+    p["hunger"] = 100
+    p["bond"] = 0
+    save_user(message.chat.id, message.from_user.id, p)
+    await message.answer(
+        f"🐾 Теперь у вас есть {p['pet_name']}! Корми его /feed и играй /play."
+    )
+
+
+@router.message(Command("pet"))
+@router.callback_query(F.data == "btn_pet")
+async def cmd_pet(event: Message | CallbackQuery):
+    is_cb = isinstance(event, CallbackQuery)
+    if is_cb:
+        await event.answer()
+        message = event.message
+        user = event.from_user
+    else:
+        message = event
+        user = event.from_user
+
+    p = ensure_profile(message.chat.id, user.id, user.first_name or "Персонаж")
+    if not p.get("married_to"):
+        await message.answer("Питомец доступен только женатым парам.")
+        return
+    if not p.get("pet_name"):
+        await message.answer("Питомца ещё нет. Заведи его: /namepet Имя")
+        return
+    progress = max(0, p["msg_count"] - p.get("marry_msg_at", 0)) + p.get("bond", 0) * 2
+    hunger = p.get("hunger", 100)
+    if hunger < 30:
+        progress = progress // 2
+    stage_idx = min(len(CHILD_STAGES) - 1, progress // 15)
+    next_at = (stage_idx + 1) * 15
+    stage_text = (
+        "максимальная стадия"
+        if stage_idx == len(CHILD_STAGES) - 1
+        else f"{progress}/{next_at} до роста"
+    )
+    hunger_note = (
+        "😋" if hunger >= 60 else ("😐" if hunger >= 30 else "😫 голоден! /feed")
+    )
+
+    await message.answer(
+        f"{PET_STAGE_EMOJIS[stage_idx]} {p['pet_name']} — стадия: {CHILD_STAGES[stage_idx]}\n"
+        f"{stage_text}\n"
+        f"Сытость: {hunger}/100 {hunger_note}\n"
+        f"Привязанность: {p.get('bond', 0)} (/play)"
+    )
+
+
+@router.message(Command("feed"))
+async def cmd_feed(message: Message):
+    p = ensure_profile(message.chat.id, message.from_user.id, display_name(message))
+    if not p.get("married_to") or not p.get("pet_name"):
+        await message.answer(
+            "Питомец доступен только женатым парам, у которых он назван (/namepet)."
+        )
+        return
+    now = time.time()
+    remaining = FEED_COOLDOWN - (now - p.get("last_feed_ts", 0))
+    if remaining > 0:
+        await message.answer(
+            f"{p['pet_name']} ещё сыт(а). Попробуй через {int(remaining // 60) + 1} мин."
+        )
+        return
+    p["hunger"] = min(100, p.get("hunger", 100) + 25)
+    p["last_feed_ts"] = now
+    save_user(message.chat.id, message.from_user.id, p)
+    await message.answer(
+        f"🍽️ {p['pet_name']} покормлен(а)! Сытость: {p['hunger']}/100."
+    )
+
+
+@router.message(Command("play"))
+async def cmd_play(message: Message):
+    p = ensure_profile(message.chat.id, message.from_user.id, display_name(message))
+    if not p.get("married_to") or not p.get("pet_name"):
+        await message.answer(
+            "Питомец доступен только женатым парам, у которых он назван (/namepet)."
+        )
+        return
+    now = time.time()
+    remaining = PLAY_COOLDOWN - (now - p.get("last_play_ts", 0))
+    if remaining > 0:
+        await message.answer(
+            f"{p['pet_name']} устал(а) играть. Попробуй через {int(remaining // 60) + 1} мин."
+        )
+        return
+    p["bond"] = p.get("bond", 0) + 1
+    p["last_play_ts"] = now
+    found_text = ""
+    if random.random() < PLAY_DROP_CHANCE:
+        drop = random.choice(DROP_POOL)
+        p.setdefault("items", {})
+        p["items"][drop] = p["items"].get(drop, 0) + 1
+        found_text = f"\n🎁 {p['pet_name']} что-то принёс(ла): {item_label(drop)}!"
+    save_user(message.chat.id, message.from_user.id, p)
+    await message.answer(
+        f"🎾 Вы поиграли с {p['pet_name']}! Привязанность: {p['bond']}.{found_text}"
+    )
+
+
+@router.message(Command("inventory"))
+async def cmd_inventory(message: Message):
+    p = ensure_profile(message.chat.id, message.from_user.id, display_name(message))
+    await message.answer(
+        f"🎒 Инвентарь {p['name']}:\n{inventory_text(p.get('items', {}))}"
+    )
+
+
+@router.message(Command("use"))
+async def cmd_use(message: Message, command: CommandObject):
+    p = ensure_profile(message.chat.id, message.from_user.id, display_name(message))
+    if not command.args:
+        keys = ", ".join(ITEMS.keys())
+        await message.answer(f"Использование: /use <предмет>\nДоступные ключи: {keys}")
+        return
+    key = command.args.strip().lower()
+    item = ITEMS.get(key)
+    if not item:
+        await message.answer("Нет такого предмета. Посмотри /inventory.")
+        return
+    have = p.get("items", {}).get(key, 0)
+    if have <= 0:
+        await message.answer(
+            f"У тебя нет «{item['label']}». Побеждай в /fight, чтобы получить предметы."
+        )
+        return
+
+    if item["kind"] == "heal":
+        healed = min(item["value"], p["max_hp"] - p["hp"])
+        p["hp"] = min(p["max_hp"], p["hp"] + item["value"])
+        p["items"][key] -= 1
+        await message.answer(
+            f"🧪 Выпито! +{healed} HP. Сейчас: {p['hp']}/{p['max_hp']}."
+        )
+    elif item["kind"] in ("buff_dmg", "buff_def", "buff_dodge"):
+        p["active_buff"] = key
+        p["items"][key] -= 1
+        await message.answer(
+            f"{item['label']} активирован — эффект сработает в следующем бою /fight."
+        )
+    elif item["kind"] == "pet_food":
+        if not p.get("married_to") or not p.get("pet_name"):
+            await message.answer("У тебя нет питомца — вкусняшка не пригодится.")
+            return
+        p["hunger"] = min(100, p.get("hunger", 100) + item["value"])
+        p["items"][key] -= 1
+        await message.answer(f"🍖 {p['pet_name']} доволен! Сытость: {p['hunger']}/100.")
+    save_user(message.chat.id, message.from_user.id, p)
+
+
+@router.message(Command("fight"))
+async def cmd_fight(message: Message):
+    me = ensure_profile(message.chat.id, message.from_user.id, display_name(message))
+    target = target_from_reply(message)
+    if not target:
+        await message.answer(
+            "Ответь этой командой на сообщение того, с кем хочешь драться."
+        )
+        return
+    foe_id, foe = target
+    if foe_id == message.from_user.id:
+        await message.answer(
+            "С самим собой не подраться — выбери другого противника."
+        )
+        return
+    if not me.get("soul") or not foe.get("soul"):
+        await message.answer("У обоих должна быть выбрана душа (/soul).")
+        return
+
+    now = time.time()
+    remaining = FIGHT_COOLDOWN - (now - me.get("last_fight_ts", 0))
+    if remaining > 0:
+        await message.answer(
+            f"⏳ Отдохни перед следующим боем: ещё {int(remaining)} сек."
+        )
+        return
+
+    my_hp, foe_hp = me["hp"], foe["hp"]
+    lines = [
+        f"⚔️ {me['name']} ({soul_label(me['soul'])}) против {foe['name']} ({soul_label(foe['soul'])})"
+    ]
+    rnd = 1
+    while my_hp > 0 and foe_hp > 0 and rnd <= 6:
+        if me.get("soul") == "kin":
+            my_hp = min(me["max_hp"], my_hp + 5)
+        if foe.get("soul") == "kin":
+            foe_hp = min(foe["max_hp"], foe_hp + 5)
+
+        my_dmg, my_crit, foe_dodged, my_heal = compute_damage(
+            {**me, "hp": my_hp}, {**foe, "hp": foe_hp}
+        )
+        foe_hp = max(0, foe_hp - my_dmg)
+        my_hp = min(me["max_hp"], my_hp + my_heal)
+        note = f"Раунд {rnd}: {me['name']} наносит {my_dmg}"
+        if my_crit:
+            note += " 💥крит!"
+        if foe_dodged:
+            note += " (частично уклонился)"
+        if my_heal:
+            note += f", лечится на {my_heal}"
+        note += f". HP {foe['name']}: {foe_hp}"
+        lines.append(note)
+        if foe_hp <= 0:
+            break
+
+        foe_dmg, foe_crit, my_dodged, foe_heal = compute_damage(
+            {**foe, "hp": foe_hp}, {**me, "hp": my_hp}
+        )
+        my_hp = max(0, my_hp - foe_dmg)
+        foe_hp = min(foe["max_hp"], foe_hp + foe_heal)
+        note2 = f"Раунд {rnd}: {foe['name']} наносит {foe_dmg}"
+        if foe_crit:
+            note2 += " 💥крит!"
+        if my_dodged:
+            note2 += " (частично уклонился)"
+        if foe_heal:
+            note2 += f", лечится на {foe_heal}"
+        note2 += f". HP {me['name']}: {my_hp}"
+        lines.append(note2)
+        rnd += 1
+
+    me["active_buff"] = None
+    foe["active_buff"] = None
+    me["hp"], foe["hp"] = my_hp, foe_hp
+    me["last_fight_ts"] = now
+
+    if foe_hp <= 0 and my_hp > 0:
+        me["wins"] = me.get("wins", 0) + 1
+        foe["losses"] = foe.get("losses", 0) + 1
+        lines.append(f"🏆 Победа за {me['name']}!")
+        if random.random() < ITEM_DROP_CHANCE:
+            drop = random.choice(DROP_POOL)
+            me.setdefault("items", {})
+            me["items"][drop] = me["items"].get(drop, 0) + 1
+            lines.append(f"🎁 Трофей: {item_label(drop)}!")
+    elif my_hp <= 0 and foe_hp > 0:
+        me["losses"] = me.get("losses", 0) + 1
+        foe["wins"] = foe.get("wins", 0) + 1
+        lines.append(f"💀 {foe['name']} побеждает в этой стычке.")
+    else:
+        me["draws"] = me.get("draws", 0) + 1
+        foe["draws"] = foe.get("draws", 0) + 1
+        lines.append("Бой прерван — оба ещё стоят на ногах.")
+
+    save_user(message.chat.id, message.from_user.id, me)
+    save_user(message.chat.id, foe_id, foe)
+    await message.answer("\n".join(lines))
+
+
+@router.message(Command("top"))
+async def cmd_top(message: Message):
+    users = all_users(message.chat.id)
+    ranked = sorted(users.values(), key=lambda u: u.get("wins", 0), reverse=True)
+    ranked = [u for u in ranked if u.get("wins", 0) > 0][:10]
+    if not ranked:
+        await message.answer("Пока никто не побеждал в /fight.")
+        return
+    medals = ["🥇", "🥈", "🥉"]
+    lines = ["🏆 Топ бойцов чата:"]
+    for i, u in enumerate(ranked):
+                prefix = medals[i] if i < 3 else f"{i + 1}."
+        lines.append(
+            f"{prefix} {u['name']} — {u.get('wins', 0)}W / {u.get('losses', 0)}L"
+        )
+    await message.answer("\n".join(lines))
+
+
+@router.message(Command("help"))
+@router.callback_query(F.data == "btn_help")
+async def cmd_help(event: Message | CallbackQuery):
+    if isinstance(event, CallbackQuery):
+        await event.answer()
+        message = event.message
+    else:
+        message = event
+
+    help_text = (
+        "📜 **ПОЛНЫЙ СПИСОК КОМАНД:**\n\n"
+        "💔 `/soul` — пройти тест и узнать цвет души\n"
+        "📊 `/profile` — твоя карточка и HP\n"
+        "💞 `/compat` (ответом) — проверить совместимость\n\n"
+        "💍 `/propose` (ответом) — сделать предложение\n"
+        "✅ `/accept` — принять предложение\n"
+        "💔 `/divorce` — развестись\n"
+        "🐾 `/namepet Имя` — завести питомца\n"
+        "🐾 `/pet` — карточка питомца\n"
+        "🍽️ `/feed` — покормить питомца\n"
+        "🎾 `/play` — поиграть с питомцем (шанс найти предмет)\n\n"
+        "⚔️ `/fight` (ответом) — дуэль с игроком\n"
+        "🎒 `/inventory` — твои предметы\n"
+        "🧪 `/use <предмет>` — использовать предмет\n"
+        "🏆 `/top` — топ победителей\n\n"
+        "✨ *HP восстанавливается автоматически: +10 HP за каждые 5 сообщений в чате.*"
+    )
+    await message.answer(help_text)
+
+
+@router.message(F.text & ~F.text.startswith("/"))
+async def on_any_text(message: Message):
+    p = ensure_profile(message.chat.id, message.from_user.id, display_name(message))
+    p["msg_count"] += 1
+    if p["msg_count"] % 5 == 0:
+        p["hp"] = min(p["max_hp"], p["hp"] + 10)
+    save_user(message.chat.id, message.from_user.id, p)
+
+
+async def main():
+    logging.basicConfig(level=logging.INFO)
+    bot = Bot(token=BOT_TOKEN)
+    dp = Dispatcher()
+    dp.include_router(router)
+    await setup_bot_commands(bot)
+    await dp.start_polling(bot)
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
+    
