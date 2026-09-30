@@ -53,7 +53,8 @@ def get_start_inline_keyboard():
     )
 
 
-# 3. Приветствие в стиле Undertale при /start
+# 3. ОСНОВНЫЕ КОМАНДЫ (ЛОГИКА)
+
 @dp.message(CommandStart())
 async def cmd_start(message: Message):
     undertale_text = (
@@ -61,11 +62,43 @@ async def cmd_start(message: Message):
         "Вижу, ты уже знакома с этим миром... Но знаешь ли ты, каков цвет твоей Души? "
         "Здесь решительность, искренность и выдержка определят твою судьбу.\n\n"
         "Я — твой путеводитель. Я слежу за уровнем HP, боями, союзами и питомцами в этом чате.\n\n"
+        "Выбери нужное действие на кнопках ниже или используй синюю кнопку **«Меню»** слева от поля ввода! ✨"
     )
     await message.answer(undertale_text, reply_markup=get_start_inline_keyboard())
 
 
-# 4. Команда /help
+@dp.message(Command("soul"))
+async def cmd_soul(message: Message):
+    # Запуск теста души
+    await message.answer(
+        "✨ Начинаем определение твоей Души...\n\n"
+        "Ответь на несколько вопросов о своем характере, чтобы узнать свою силу!"
+    )
+
+
+@dp.message(Command("profile"))
+async def cmd_profile(message: Message):
+    # Отображение профиля
+    await message.answer(
+        "📊 **ТВОЙ ПРОФИЛЬ:**\n\n"
+        "❤️ HP: 100/100\n"
+        "🔷 Душа: Искренность\n"
+        "💍 Брачный статус: В поиске\n"
+        "🎒 Инвентарь: Пусто"
+    )
+
+
+@dp.message(Command("pet"))
+async def cmd_pet(message: Message):
+    # Карточка питомца
+    await message.answer(
+        "🐾 **ТВОЙ ПИТОМЕЦ:**\n\n"
+        "Имя: Еще не дано (используй /namepet Имя)\n"
+        "🍖 Сытость: 100%\n"
+        "⭐ Уровень: 1"
+    )
+
+
 @dp.message(Command("help"))
 async def cmd_help(message: Message):
     help_text = (
@@ -83,45 +116,35 @@ async def cmd_help(message: Message):
     await message.answer(help_text, parse_mode="Markdown")
 
 
-# 5. Обработка нажатий на плашки-кнопки
+# 4. ОБРАБОТЧИКИ НАЖАТИЙ НА КНОПКИ (Прямой вызов функций)
+
 @dp.callback_query(F.data == "btn_soul")
 async def process_soul(callback: CallbackQuery):
     await callback.answer()
-    await callback.message.answer(
-        "✨ Твоя Решимость наполняет тебя силами!\n"
-        "Чтобы пройти тест на цвет души и узнать свои свойства, напиши команду: /soul"
-    )
+    # Сразу запускаем тест души
+    await cmd_soul(callback.message)
 
 @dp.callback_query(F.data == "btn_profile")
 async def process_profile(callback: CallbackQuery):
     await callback.answer()
-    await callback.message.answer(
-        "📊 Чтобы узнать свой текущий уровень HP, статус брака и инвентарь, введи: /profile"
-    )
-
-@dp.callback_query(F.data == "btn_fight_info")
-async def process_fight(callback: CallbackQuery):
-    await callback.answer()
-    await callback.message.answer(
-        "⚔️ Чтобы вызвать человека на битву в стиле Undertale, ответь на его сообщение командой: /fight"
-    )
-
-@dp.callback_query(F.data == "btn_compat_info")
-async def process_compat(callback: CallbackQuery):
-    await callback.answer()
-    await callback.message.answer(
-        "💞 Ответь человеку командой /compat, чтобы узнать, насколько резонируют ваши души!"
-    )
+    # Сразу выводим профиль
+    await cmd_profile(callback.message)
 
 @dp.callback_query(F.data == "btn_pet")
 async def process_pet(callback: CallbackQuery):
     await callback.answer()
-    await callback.message.answer(
-        "🐾 Управление питомцем:\n"
-        "• /pet — посмотреть карточку\n"
-        "• /feed — покормить\n"
-        "• /play — поиграть (есть шанс найти предмет!)"
-    )
+    # Сразу показываем питомца
+    await cmd_pet(callback.message)
+
+@dp.callback_query(F.data == "btn_fight_info")
+async def process_fight(callback: CallbackQuery):
+    await callback.answer()
+    await callback.message.answer("⚔️️ Чтобы вызвать человека на битву в стиле Undertale, ответь на его сообщение командой: /fight")
+
+@dp.callback_query(F.data == "btn_compat_info")
+async def process_compat(callback: CallbackQuery):
+    await callback.answer()
+    await callback.message.answer("💞 Ответь человеку командой /compat в чате, чтобы узнать, насколько резонируют ваши души!")
 
 @dp.callback_query(F.data == "btn_help")
 async def process_help(callback: CallbackQuery):
@@ -137,4 +160,3 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-                                     
